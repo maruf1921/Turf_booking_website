@@ -65,7 +65,8 @@ const db = new sqlite3.Database(dbPath, (err) => {
             bkash_number TEXT,
             price REAL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id)
+            FOREIGN KEY(user_id) REFERENCES users(id),
+            UNIQUE(date, time_slot)
         )`);
 
         // Blocked Dates
@@ -97,4 +98,5 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
+console.log('Database instance created.');
 module.exports = db;

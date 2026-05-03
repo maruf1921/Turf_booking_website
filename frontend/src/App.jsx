@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { Menu, X, MessageCircle, LogOut, User } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
 import Home from './pages/Home';
 import Booking from './pages/Booking';
 import About from './pages/About';
@@ -13,13 +14,11 @@ import AdminPanel from './pages/AdminPanel';
 
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')) || null);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+    logout();
     navigate('/');
   };
 
@@ -62,14 +61,14 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/booking" element={<Booking user={user} />} />
+          <Route path="/booking" element={<Booking />} />
           <Route path="/about" element={<About />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login setUser={setUser} />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/dashboard" element={<CustomerDashboard user={user} />} />
-          <Route path="/admin" element={<AdminPanel user={user} />} />
+          <Route path="/dashboard" element={<CustomerDashboard />} />
+          <Route path="/admin" element={<AdminPanel />} />
         </Routes>
       </main>
 

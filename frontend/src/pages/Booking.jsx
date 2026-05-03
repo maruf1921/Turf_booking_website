@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
-function Booking({ user }) {
+function Booking() {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     date: '',
     timeSlot: '',
@@ -15,19 +18,19 @@ function Booking({ user }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/bookings/config')
-      .then(res => res.json())
-      .then(data => setTurfConfig(data.turf));
+    api.get('/bookings/config')
+      .then(res => setTurfConfig(res.data.turf))
+      .catch(err => console.error(err));
   }, []);
 
   useEffect(() => {
     if (formData.date) {
-      fetch(`http://localhost:5000/api/bookings/availability?date=${formData.date}`)
-        .then(res => res.json())
-        .then(data => {
-            setAvailableSlots(data.availableSlots || []);
+      api.get(`/bookings/availability?date=${formData.date}`)
+        .then(res => {
+            setAvailableSlots(res.data.availableSlots || []);
             setFormData(prev => ({...prev, timeSlot: ''}));
-        });
+        })
+        .catch(err => console.error(err));
     }
   }, [formData.date]);
 
@@ -64,30 +67,17 @@ function Booking({ user }) {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/bookings', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            date: formData.date,
-            time_slot: formData.timeSlot,
-            duration: formData.duration,
-            team_name: formData.teamName,
-            bkash_number: formData.bkash_number
-        })
+      await api.post('/bookings', {
+          date: formData.date,
+          time_slot: formData.timeSlot,
+          duration: formData.duration,
+          team_name: formData.teamName,
+          bkash_number: formData.bkash_number
       });
-      const data = await res.json();
-      if (res.ok) {
-        alert('Booking request received! Please wait for admin approval.');
-        navigate('/dashboard');
-      } else {
-        alert(data.error);
-      }
+      alert('Booking request received! Please wait for admin approval.');
+      navigate('/dashboard');
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 

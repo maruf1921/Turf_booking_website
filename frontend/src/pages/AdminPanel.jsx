@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
-function AdminPanel({ user }) {
+function AdminPanel() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [stats, setStats] = useState({ todayBookings: 0, revenue: 0 });
   const [bookings, setBookings] = useState([]);
@@ -12,23 +15,19 @@ function AdminPanel({ user }) {
   const [newBlockDate, setNewBlockDate] = useState('');
   const [blockReason, setBlockReason] = useState('');
 
-  const token = localStorage.getItem('token');
-
   const fetchData = async () => {
-    if (!token) return;
     try {
-      const headers = { 'Authorization': `Bearer ${token}` };
       const [resStats, resBookings, resCust, resConfig] = await Promise.all([
-        fetch('http://localhost:5000/api/bookings/stats', { headers }),
-        fetch('http://localhost:5000/api/bookings/all', { headers }),
-        fetch('http://localhost:5000/api/bookings/customers', { headers }),
-        fetch('http://localhost:5000/api/bookings/config', { headers })
+        api.get('/bookings/stats'),
+        api.get('/bookings/all'),
+        api.get('/bookings/customers'),
+        api.get('/bookings/config')
       ]);
-      setStats(await resStats.json());
-      setBookings(await resBookings.json());
-      setCustomers(await resCust.json());
+      setStats(resStats.data);
+      setBookings(resBookings.data);
+      setCustomers(resCust.data);
       
-      const config = await resConfig.json();
+      const config = resConfig.data;
       if (config.turf) {
         setPricing({
           day_price: config.turf.day_price,
@@ -49,14 +48,10 @@ function AdminPanel({ user }) {
 
   const updateStatus = async (id, status) => {
     try {
-      await fetch(`http://localhost:5000/api/bookings/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ status })
-      });
+      await api.put(`/bookings/${id}/status`, { status });
       fetchData();
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 
@@ -67,29 +62,21 @@ function AdminPanel({ user }) {
         [field]: value
     };
     try {
-      await fetch(`http://localhost:5000/api/bookings/${id}/payment`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
+      await api.put(`/bookings/${id}/payment`, payload);
       fetchData();
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 
   const handlePricingUpdate = async (e) => {
     e.preventDefault();
     try {
-      await fetch(`http://localhost:5000/api/bookings/pricing`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(pricing)
-      });
+      await api.put(`/bookings/pricing`, pricing);
       alert('Pricing updated successfully!');
       fetchData();
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 
@@ -97,28 +84,21 @@ function AdminPanel({ user }) {
     e.preventDefault();
     if (!newBlockDate) return;
     try {
-      await fetch(`http://localhost:5000/api/bookings/block-date`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ date: newBlockDate, reason: blockReason })
-      });
+      await api.post(`/bookings/block-date`, { date: newBlockDate, reason: blockReason });
       setNewBlockDate('');
       setBlockReason('');
       fetchData();
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 
   const handleUnblockDate = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/bookings/block-date/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      await api.delete(`/bookings/block-date/${id}`);
       fetchData();
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 

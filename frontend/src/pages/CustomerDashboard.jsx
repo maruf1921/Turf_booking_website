@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
-function CustomerDashboard({ user }) {
+function CustomerDashboard() {
+  const { user } = useAuth();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchBookings = () => {
+  const fetchBookings = async () => {
     if (!user) return;
     setLoading(true);
-    const token = localStorage.getItem('token');
-    fetch('http://localhost:5000/api/bookings/my-bookings', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+      const { data } = await api.get('/bookings/my-bookings');
       setBookings(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
       setLoading(false);
-    });
+    }
   };
 
   useEffect(() => {
@@ -25,16 +27,12 @@ function CustomerDashboard({ user }) {
 
   const handleCancel = async (id) => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/bookings/${id}/cancel`, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
+      const res = await api.put(`/bookings/${id}/cancel`);
+      if (res.status === 200) {
         setBookings(bookings.map(b => b.id === id ? {...b, status: 'cancelled'} : b));
       }
     } catch (err) {
-      console.error(err);
+      alert(err.message);
     }
   };
 

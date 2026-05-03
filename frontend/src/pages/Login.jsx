@@ -1,57 +1,57 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-function Login({ setUser }) {
+function Login() {
   const [formData, setFormData] = useState({ phone: '', password: '' });
+  const [error, setError] = useState('');
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        setUser(data.user);
-        if (data.user.role === 'admin') navigate('/admin');
-        else navigate('/dashboard');
-      } else {
-        alert(data.error);
-      }
+      const user = await login(formData.phone, formData.password);
+      if (user.role === 'admin') navigate('/admin');
+      else navigate('/dashboard');
     } catch (err) {
-      console.error(err);
+      setError(err.message);
     }
   };
 
   return (
     <div className="section container">
-      <div style={{maxWidth: '400px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid var(--border-color)'}}>
-        <h2 className="text-center" style={{marginBottom: '1.5rem', color: 'var(--primary)'}}>Login</h2>
+      <div className="card" style={{ maxWidth: '400px', margin: '0 auto' }}>
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Login</h2>
+        {error && <p style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Phone Number</label>
-            <input type="tel" name="phone" onChange={handleChange} required />
+            <input 
+              type="text" 
+              placeholder="01XXXXXXXXX" 
+              value={formData.phone}
+              onChange={(e) => setFormData({...formData, phone: e.target.value})}
+              required 
+            />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" name="password" onChange={handleChange} required />
+            <input 
+              type="password" 
+              placeholder="••••••••" 
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              required 
+            />
           </div>
-          <div style={{textAlign: 'right', marginBottom: '1rem'}}>
-            <button type="button" onClick={() => alert('Forgot password flow (Mocked)')} style={{background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.875rem'}}>
-              Forgot Password?
-            </button>
-          </div>
-          <button type="submit" className="btn btn-primary btn-block">Login</button>
+          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
-        <p className="text-center" style={{marginTop: '1.5rem'}}>
-          Don't have an account? <Link to="/signup" style={{color: 'var(--primary)', fontWeight: 'bold'}}>Sign up here</Link>
+        <p style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.875rem' }}>
+          Don't have an account? <Link to="/signup" style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Sign up</Link>
         </p>
       </div>
     </div>
